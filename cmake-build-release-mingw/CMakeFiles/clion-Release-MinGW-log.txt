@@ -1,0 +1,4 @@
+"C:\Program Files\JetBrains\CLion 2023.3.4\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Release "-DCMAKE_MAKE_PROGRAM=C:/Program Files/JetBrains/CLion 2023.3.4/bin/ninja/win/x64/ninja.exe" -G Ninja -S "C:\FIlesOfMXY\Complication of SJTU Files\cs2309_problem solution\1st\optimized task2" -B "C:\FIlesOfMXY\Complication of SJTU Files\cs2309_problem solution\1st\optimized task2\cmake-build-release-mingw"
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: C:/FIlesOfMXY/Complication of SJTU Files/cs2309_problem solution/1st/optimized task2/cmake-build-release-mingw

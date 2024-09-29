@@ -1,0 +1,3 @@
+C:/FIlesOfMXY/Complication of SJTU Files/cs2309_problem solution/1st/optimized task2/cmake-build-release-mingw/CMakeFiles/optimized_task2.dir
+C:/FIlesOfMXY/Complication of SJTU Files/cs2309_problem solution/1st/optimized task2/cmake-build-release-mingw/CMakeFiles/edit_cache.dir
+C:/FIlesOfMXY/Complication of SJTU Files/cs2309_problem solution/1st/optimized task2/cmake-build-release-mingw/CMakeFiles/rebuild_cache.dir
