@@ -81,15 +81,12 @@ bool move_dictionary(const string &from, const string &to) {
         return false;
     }
 
-    if(to == "\\a\\b"){
-        cout<<200<<endl;
-        cout<<R"(\a\b\c\d\e_1.txt)";
-        return false;
-    }
     vector<string> toErase;
     for (auto &path: file) { // traverse each path
         size_t addr = path.first.find(from);
         if (addr == std::string::npos)
+            continue;
+        if (path.first.find(to) != std::string::npos && to.size()>from.size())
             continue;
         toErase.push_back(path.first);
 
