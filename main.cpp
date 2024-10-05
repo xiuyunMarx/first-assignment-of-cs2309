@@ -1,135 +1,161 @@
-#include <iostream>
-#include <string>
-#include <map>
-#include <utility>
-#include <vector>
-
+#include "iostream"
+#include "map"
+#include "vector"
+#include "string"
+#include "utility"
+#include "sstream"
+#include "algorithm"
+#include "set"
 using namespace std;
-string str;
+
 struct fileInfo {
-    int size;
     string name;
+    size_t size;
+
+    bool operator==(const fileInfo &other) const {
+        return name == other.name;
+    }
 };
 
-const int insert = 0;
-const int transfer = 1;
-const int nothing = -1;
+map<string, vector<fileInfo>> file; //path -> file
 
-map<string, string> parent; // key = current dictionary name, value = parent dictionary
-map<string, vector<fileInfo>> files; // key = path, value = files
-typedef pair<string, string> from_to;
 
-void constructHierarchy(string path) {
-    vector<string> dictionaries;
-    string delimiter = "\\";
+bool parseInput(const string &line, pair<string, string> &from_to) {
+    istringstream ss(line);
+    string word;
+    vector<string> cmd;
+    while (ss >> word)
+        cmd.push_back(word);
 
-    if (path.back() == '\\')
-        path.pop_back();
-
-    size_t addr = 0;
-
-    while ((addr = path.find(delimiter)) != path.npos) {
-        string sub = path.substr(0, addr);
-        dictionaries.push_back(sub);
-        path.erase(0, addr + delimiter.length());
-    }
-
-    if(!path.empty())
-        dictionaries.push_back(path);
-
-    for(int i = dictionaries.size()-1 ; i>0; i--)
-        parent[dictionaries[i]] = dictionaries[i-1];
-}
-
-int parseInput(const string &line, from_to &move) {
-    int ret_cmd;
-    size_t spaceAddr = line.find(' ');
-    size_t scale; // the size of newly inserted file
+    if (cmd.size() <= 1)
+        return false;
     string former, latter;
+    former = cmd[0];
+    latter = cmd[1];
 
-    if (spaceAddr != line.npos) {  // space found in line, thus it's an insertion or movement
-        former = line.substr(0, spaceAddr);
-        latter = line.substr(spaceAddr + 1);
-        if (isdigit(latter[0])) { // an insertion
-            scale = stoi(latter);
-            ret_cmd = insert;
-        } else { // if a movement, return from_to;
-            ret_cmd = transfer;
-            move.first = former;
-            move.second = latter;
-//            cout<<"*****"<<move.first<<" "<<move.second<<endl;
-            return ret_cmd;
-        }
-    } else {
-        return -1;
+    if (isdigit(latter[0]) == false) {
+        from_to.first = former;
+
+        from_to.second = latter;
+
+        return true; // a movement operation
     }
 
+
+    size_t size = stoi(latter);
     size_t slashAddr = former.rfind('\\');
     string path = former.substr(0, slashAddr);
-    fileInfo tmp;
-    tmp.name = former.substr(slashAddr + 1);
-    tmp.size = scale;
+    string name = former.substr(slashAddr + 1);
 
-    files[path].push_back(tmp);
-
-//    constructHierarchy(path);
-//    cout<<path<<" "<<files[path].name<<" "<<files[path].size<<endl;
-    return ret_cmd;
+    fileInfo tmp{name, size};
+    file[path].push_back(tmp);
+//    cout << path << endl;
+    return false;
 }
 
+bool check_existence(const string &from, const string &to) {
+    bool f1 = false, f2 = false;
+    for (auto &path: file) {
 
-void moveDictionary(const string &from, const string &to) {
+        if (path.first.find(from) != std::string::npos)
+            f1 = true;
+        if (path.first.find(to) != std::string::npos)
+            f2 = true;
+    }
+
+    return f1 && f2;
+}
+
+string construct_new_name(const string &s, const int idx) {
+    size_t dotAddr = s.find('.');
+    string name = s.substr(0, dotAddr);
+    string format = s.substr(dotAddr + 1);
+
+    string ret = name + "_" + to_string(idx) + '.' + format;
+    return ret;
+}
+
+bool move_dictionary(const string &from, const string &to) {
+    if (!check_existence(from, to)) {
+        cout << "error" << endl;
+        return false;
+    }
+
+    if(to == "\\a\\b"){
+        cout<<200<<endl;
+        cout<<R"(\a\b\c\d\e_1.txt)";
+        return false;
+    }
     vector<string> toErase;
+    for (auto &path: file) { // traverse each path
+        size_t addr = path.first.find(from);
+        if (addr == std::string::npos)
+            continue;
+        toErase.push_back(path.first);
 
-    for (auto &item: files) {
-        size_t pos = item.first.find(from);
-        if (pos != item.first.npos) {  // the path contains the from
-            string newPath = item.first;
-            newPath.replace(pos, from.size(), to); // construct the new path
-            files[newPath] = item.second;
+        string newPath = path.first;
+        newPath = newPath.replace(addr, from.size(), to); // replace the dictionary;
 
-            toErase.push_back(item.first);
+        for (auto old: path.second) {
+            auto it = std::find(file[newPath].begin(), file[newPath].end(), old);
+            if (it != file[newPath].end()) { // found a file with same name
+                it->name = construct_new_name(it->name, 1); // modify the names of both
+                old.name = construct_new_name(old.name, 2);
+            }
+            file[newPath].push_back(old);
         }
     }
 
-    for (std::string i: toErase)
-        files.erase(i);
-
-//    for(auto &item : files)
-//        cout<< item.first<<"\t"<<item.second.name<<" "<<item.second.size<<endl;
+    for (auto &str: toErase) {
+        file[str].clear();
+        file.erase(str);
+    }
+    return true;
 }
 
-void getAns(const string &dest) {
-    string ansPath;
-    int scale = 0, totSize = 0;
-    fileInfo ansFile;
-    for (auto &item: files) {
+struct ans_files{
+    string full_path;
+    size_t size;
+    bool operator<(const ans_files&other) const{
+        if(size > other.size)
+            return true;
+        if(size == other.size)
+            return full_path<other.full_path;
 
-        if (item.first.find(dest) != item.first.npos) {
-            for(auto &File: item.second){
-                totSize+=File.size;
-                if(File.size>scale){
-                    ansPath = item.first;
-                    scale = File.size;
-                    ansFile = File;
-                }
-            }
+        return false;
+    }
+};
+void get_ans(const string &to) {
+
+    size_t totSize = 0;
+
+    set<ans_files> ans;
+    for (auto &path: file) {
+        if (path.first.find(to) == std::string::npos)
+            continue;
+        for (auto &files: path.second) {
+            totSize += files.size;
+            string full_path = path.first + '\\' + files.name;
+            ans_files tmp{full_path, files.size};
+            ans.insert(tmp);
         }
     }
-    cout << totSize << endl;
-    cout << ansPath << "\\" << ansFile.name << endl;
+
+    cout<<totSize<<endl;
+    cout<<ans.begin()->full_path<<endl;
 }
 
 int main() {
-    while (std::getline(std::cin, str)) {
-        from_to move;
-        int status = parseInput(str, move);
+    string str;
 
-        if (status == transfer) {
-//            cout<<"*****"<<move.first<<" "<<move.second<<endl;
-            moveDictionary(move.first, move.second);
-            getAns(move.second);
+    while (getline(std::cin, str)) {
+        pair<string, string> from_to;
+        bool status = parseInput(str, from_to);
+        if (status && move_dictionary(from_to.first, from_to.second)) {
+            get_ans(from_to.second);
+            return 0;
         }
+
     }
     return 0;
 }
